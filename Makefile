@@ -1,24 +1,24 @@
-.PHONY: all en de run
+.PHONY: all run clean
 
+CC=g++
 PROG=encrypt
 PROG2=decrypt
-
-OPENCV = -I "C:\opencv\build\include" -L "C:\opencv\build\x86\mingw\lib" -lopencv_core245 -lopencv_highgui245 -lopencv_imgproc245
+CFLAGS=
+OPENCV_INC="C:\opencv\build\include" 
+OPENCV_LIB="C:\opencv\build\x86\mingw\lib" 
+OPENCV=-I $(OPENCV_INC) -L $(OPENCV_LIB) -lopencv_core245 -lopencv_highgui245 -lopencv_imgproc245
 
 all: $(PROG) $(PROG2)
 
 $(PROG): $(PROG).cpp AES.cpp
-	g++ -o $@ $^ $(OPENCV)
+	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
 
 $(PROG2): $(PROG2).cpp AES.cpp
-	g++ -o $@ $^ $(OPENCV)
-
-en:
-	./$(PROG)
-
-de:
-	./$(PROG2)
+	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
 
 run:
 	./$(PROG)
 	./$(PROG2)
+
+clean:
+	rm -f $(PROG) $(PROG2) *.o *.exe

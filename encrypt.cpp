@@ -50,11 +50,25 @@ int main ()
 {
     Mat _src = imread(filename , 1);
     Mat _dst = _src.clone();
-    short x = 247;
-    short y = 121;
-    short w = 105;
-    short h = 48;
-    Mat dst = _dst(Rect(x, y, w, h));
+    short x, y, w, h;
+    Mat dst;
+/*
+    x = 247;
+    y = 121;
+    w = 105;
+    h = 48;
+*/
+    x = 173;
+    y = 247;
+    w = 95;
+    h = 48;
+/*
+    x = 49;
+    y = 71;
+    w = 182;
+    h = 111;
+*/
+    dst = _dst(Rect(x, y, w, h));
 
     // encryption
 	AES aes(key);
@@ -72,14 +86,6 @@ int main ()
     medianBlur(dst, dst, kernel);
     medianBlur(dst, dst, kernel);
 /*
-    dst = _dst(Rect(173, 247, 95, 48));
-    medianBlur(dst, dst, 21);
-    medianBlur(dst, dst, kernel);
-
-    dst = _dst(Rect(49, 71, 182, 111));
-    medianBlur(dst, dst, kernel);
-    medianBlur(dst, dst, kernel);
-
     vector<Mat> img;
     img.push_back(_src);
     img.push_back(_dst);
@@ -87,7 +93,7 @@ int main ()
 */
     // output blurred image
     imwrite("result.jpg", _dst);
-    
+
     // encrypt offset and size info
     unsigned char info[16] = "";
     memcpy(info, &x, sizeof(x));
@@ -96,7 +102,7 @@ int main ()
     memcpy(info+6, &h, sizeof(h));
     memcpy(info+8, "pixAES", 6);
     aes.Cipher(info);
-    
+
     // append encrypted block of image and encryted info to blurred image
     FILE *f = fopen("result.jpg", "ab");
     fwrite(input, 1, size, f);

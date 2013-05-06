@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <vector>
 #include <opencv2/opencv.hpp>
 #include "AES.h"
 
@@ -17,97 +16,101 @@ unsigned char key[] = {
     0x09, 0xcf, 0x4f, 0x3c
 };
 
-void imshowMany(const std::string& _winName, const vector<Mat>& _imgs)
+Mat _src, _dst, roi;
+Rect rect;
+Point point;
+int drag = 0;
+
+void mouseHandler(int event, int x, int y, int flags, void* param)
 {
-    int nImg = (int)_imgs.size();
-
-    Mat dispImg;
-
-    if (nImg != 2) {
-        printf("Number of arguments too small....\n");
-        return;
+    /* user press left button */
+    if (event == CV_EVENT_LBUTTONDOWN && !drag) {
+        point = Point(x, y);
+        drag  = 1;
     }
 
-    // w - Maximum number of images in a row
-    // h - Maximum number of images in a column
-    int w = 2, h = 1;
-    int width = _imgs[0].cols;
-    int height = _imgs[0].rows;
-
-    dispImg.create(Size(width*w, height*h), CV_8UC3);
-
-    for (int i= 0, m=0, n=0; i<nImg; i++, m+=(width)) {
-        Mat imgROI = dispImg(Rect(m, n, width, height));
-        _imgs[i].copyTo(imgROI);
+    /* user drag the mouse */
+    if (event == CV_EVENT_MOUSEMOVE && drag) {
+        _dst = _src.clone();
+        rectangle(_dst, point, Point(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
+        imshow("img", _dst);
     }
 
-    namedWindow(_winName);
-    imshow(_winName, dispImg);
-    waitKey(0);
+    /* user release left button */
+    if (event == CV_EVENT_LBUTTONUP && drag) {
+        _dst = _src.clone();
+
+        rect = Rect(point.x, point.y, x - point.x, y - point.y);
+        roi = _dst(rect);
+        medianBlur(roi, roi, kernel);
+        medianBlur(roi, roi, kernel);
+        imshow("img", _dst);
+        drag = 0;
+    }
+
+    /* user click right button: reset all */
+    if (event == CV_EVENT_RBUTTONUP) {
+        imshow("img", _src);
+        rect.width = rect.height = 0;
+        drag = 0;
+    }
 }
 
-int main ()
+int main (int argc, char *argv[])
 {
-    Mat _src = imread(filename , 1);
-    Mat _dst = _src.clone();
-    short x, y, w, h;
-    Mat dst;
-/*
-    x = 247;
-    y = 121;
-    w = 105;
-    h = 48;
-*/
-    x = 173;
-    y = 247;
-    w = 95;
-    h = 48;
-/*
-    x = 49;
-    y = 71;
-    w = 182;
-    h = 111;
-*/
-    dst = _dst(Rect(x, y, w, h));
+    _src = imread(filename , 1);
 
-    // encryption
-	AES aes(key);
-	int size = ((3*dst.cols*dst.rows+15)>>4)<<4;
-    unsigned char *input = new unsigned char[size], *temp;
-    memset(input, 0, size);
-    for (int i = 0; i < dst.rows; i++)
-        memcpy(input+i*3*dst.cols, dst.data+i*_dst.cols*3, 3*dst.cols);
+    namedWindow("img", 1);
 
-    for (int i = 0; i < size; i+=16) {
-        temp = input+i;
-        aes.Cipher(temp);
+    setMouseCallback("img", mouseHandler, NULL);
+    imshow("img", _src);
+    waitKey(0);
+
+    destroyWindow("img");
+
+    if (rect.area() > 0) {
+        /* output blurred image */
+        imwrite("result.jpg", _dst);
+
+        short x, y, w, h;
+        x = rect.x;
+        y = rect.y;
+        w = rect.width;
+        h = rect.height;
+        cout << x << " " << y << " " << w << " " << h << endl;
+
+        /* init AES with key and set buffer */
+        AES aes(key);
+        roi = _src(rect);
+        int size = ((3*roi.cols*roi.rows+15)>>4)<<4;
+        unsigned char *input = new unsigned char[size], *temp;
+        memset(input, 0, size);
+        for (int i = 0; i < roi.rows; i++)
+            memcpy(input+i*3*roi.cols, roi.data+i*_dst.cols*3, 3*roi.cols);
+
+        /* encrypt 128 bits each time until the whole roi is encryted */
+        for (int i = 0; i < size; i+=16) {
+            temp = input+i;
+            aes.Cipher(temp);
+        }
+
+        /* encrypt offset and size info */
+        unsigned char info[16] = "";
+        memcpy(info, &x, sizeof(x));
+        memcpy(info+2, &y, sizeof(y));
+        memcpy(info+4, &w, sizeof(w));
+        memcpy(info+6, &h, sizeof(h));
+        memcpy(info+8, "pixAES", 6);
+        aes.Cipher(info);
+
+        /* append encrypted block of image and encryted info to blurred image */
+        FILE *f = fopen("result.jpg", "ab");
+        fwrite(input, 1, size, f);
+        fwrite(info, 1, 16, f);
+        fclose(f);
+
+        cout << "Your image has been encrypted" << endl;
     }
-
-    medianBlur(dst, dst, kernel);
-    medianBlur(dst, dst, kernel);
-/*
-    vector<Mat> img;
-    img.push_back(_src);
-    img.push_back(_dst);
-    imshowMany("haha", img);
-*/
-    // output blurred image
-    imwrite("result.jpg", _dst);
-
-    // encrypt offset and size info
-    unsigned char info[16] = "";
-    memcpy(info, &x, sizeof(x));
-    memcpy(info+2, &y, sizeof(y));
-    memcpy(info+4, &w, sizeof(w));
-    memcpy(info+6, &h, sizeof(h));
-    memcpy(info+8, "pixAES", 6);
-    aes.Cipher(info);
-
-    // append encrypted block of image and encryted info to blurred image
-    FILE *f = fopen("result.jpg", "ab");
-    fwrite(input, 1, size, f);
-    fwrite(info, 1, 16, f);
-    fclose(f);
 
     return 0;
 }

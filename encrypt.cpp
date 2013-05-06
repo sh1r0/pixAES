@@ -9,7 +9,7 @@ using namespace cv;
 #define window_name "after"
 #define kernel 25
 
-unsigned char key[] = {
+unsigned char KEY[] = {
     0x2b, 0x7e, 0x15, 0x16,
     0x28, 0xae, 0xd2, 0xa6,
     0xab, 0xf7, 0x15, 0x88,
@@ -19,10 +19,19 @@ unsigned char key[] = {
 Mat _src, _dst, roi;
 Rect rect;
 Point point;
-int drag = 0;
+int drag;
+
+/* return i in [a, b] */
+int bound(short i,short a,short b)
+{
+    return min(max(i,min(a,b)),max(a,b));
+}
 
 void mouseHandler(int event, int x, int y, int flags, void* param)
 {
+    x = bound(x, 0, _src.cols-1);
+    y = bound(y, 0, _src.rows-1);
+
     /* user press left button */
     if (event == CV_EVENT_LBUTTONDOWN && !drag) {
         point = Point(x, y);
@@ -40,7 +49,14 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     if (event == CV_EVENT_LBUTTONUP && drag) {
         _dst = _src.clone();
 
+        Point temp(point);
+        point.x = min(x, temp.x);
+        x = max(x, temp.x);
+        point.y = min(y, temp.y);
+        y = max(y, temp.y);
+
         rect = Rect(point.x, point.y, x - point.x, y - point.y);
+
         roi = _dst(rect);
         medianBlur(roi, roi, kernel);
         medianBlur(roi, roi, kernel);
@@ -58,7 +74,13 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 
 int main (int argc, char *argv[])
 {
-    _src = imread(filename , 1);
+    unsigned char *key;
+    if (argc < 2)
+        _src = imread(filename, 1);
+    else
+        _src = imread(argv[1], 1);
+    if (argc < 3)
+        key = KEY;
 
     namedWindow("img", 1);
 
@@ -77,7 +99,7 @@ int main (int argc, char *argv[])
         y = rect.y;
         w = rect.width;
         h = rect.height;
-        cout << x << " " << y << " " << w << " " << h << endl;
+        // cout << x << " " << y << " " << w << " " << h << endl;
 
         /* init AES with key and set buffer */
         AES aes(key);

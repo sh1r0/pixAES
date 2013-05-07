@@ -7,7 +7,7 @@ using namespace cv;
 
 #define filename "Stickies.jpg"
 #define window_name "after"
-#define kernel 25
+#define kernel 51
 
 unsigned char KEY[] = {
     0x2b, 0x7e, 0x15, 0x16,
@@ -86,11 +86,11 @@ int main (int argc, char *argv[])
 
     setMouseCallback("img", mouseHandler, NULL);
     imshow("img", _src);
-    waitKey(0);
+    char c = waitKey(0);
 
     destroyWindow("img");
 
-    if (rect.area() > 0) {
+    if (c == 's' && rect.area() > 0) {
         /* output blurred image */
         imwrite("result.jpg", _dst);
 

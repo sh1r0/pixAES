@@ -17,7 +17,7 @@ $(PROG): $(PROG).cpp AES.cpp
 $(PROG2): $(PROG2).cpp AES.cpp
 	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
 
-run:
+run: $(PROG) $(PROG2)
 	./$(PROG) $(IMG)
 	./$(PROG2)
 

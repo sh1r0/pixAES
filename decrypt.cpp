@@ -19,12 +19,16 @@ int main()
 {
     AES aes(key);
     FILE *f = fopen("result.jpg", "rb");
-    
+    if (!f) {
+        perror("The encryted file dose not exist!!");
+        return -1;
+    }
+
     // get encrypted info
     unsigned char info[16] = "";
     fseek(f, -16, SEEK_END);
     fread(info, 1, 16, f);
-    
+
     // verify key and info
     aes.InvCipher(info);
     if (memcmp(info+8, "pixAES", 6)) {

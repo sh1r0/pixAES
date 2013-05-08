@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include "AES.h"
 
@@ -8,6 +9,7 @@ using namespace cv;
 #define filename "Stickies.jpg"
 #define window_name "after"
 #define kernel 51
+#define METHOD 2
 
 unsigned char KEY[] = {
     0x2b, 0x7e, 0x15, 0x16,
@@ -16,10 +18,12 @@ unsigned char KEY[] = {
     0x09, 0xcf, 0x4f, 0x3c
 };
 
-Mat _src, _dst, roi;
-Rect rect;
+Mat _src, _dst, imgROI;
+Rect box;
 Point point;
 int drag;
+vector<Point> points;
+const Point *pts;
 
 /* return i in [a, b] */
 int bound(short i,short a,short b)
@@ -34,32 +38,55 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 
     /* user press left button */
     if (event == CV_EVENT_LBUTTONDOWN && !drag) {
+        #if METHOD == 1
         point = Point(x, y);
+        #else
+        points.clear();
+        points.push_back(Point(x, y));
+        #endif
         drag  = 1;
     }
 
     /* user drag the mouse */
     if (event == CV_EVENT_MOUSEMOVE && drag) {
         _dst = _src.clone();
+        
+        #if METHOD == 1
         rectangle(_dst, point, Point(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
+        #else
+        pts = (const Point*)Mat(points).data;
+        int npts = points.size();
+        points.push_back(Point(x, y));
+        polylines(_dst, &pts, &npts, 1, false, Scalar(0,0,255), 2, 8, 0);
+        #endif
+        
         imshow("img", _dst);
     }
 
     /* user release left button */
     if (event == CV_EVENT_LBUTTONUP && drag) {
         _dst = _src.clone();
-
+        
+        #if METHOD == 1
         Point temp(point);
         point.x = min(x, temp.x);
         x = max(x, temp.x);
         point.y = min(y, temp.y);
         y = max(y, temp.y);
-
-        rect = Rect(point.x, point.y, x - point.x, y - point.y);
-
-        roi = _dst(rect);
-        medianBlur(roi, roi, kernel);
-        medianBlur(roi, roi, kernel);
+        box = Rect(point.x, point.y, x - point.x, y - point.y);
+        imgROI = _dst(box);
+        medianBlur(imgROI, imgROI, kernel);
+        medianBlur(imgROI, imgROI, kernel);
+        #else
+        box = boundingRect(points);
+        Mat mask = Mat::ones(_src.size(), CV_8UC1);
+        vector< vector<Point> > contour;
+        contour.push_back(points);
+        fillPoly(mask, contour, Scalar(0));
+        medianBlur(_src(box), _dst(box), 51);
+        _src(box).copyTo(_dst(box), mask(box));
+        #endif
+        
         imshow("img", _dst);
         drag = 0;
     }
@@ -67,7 +94,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     /* user click right button: reset all */
     if (event == CV_EVENT_RBUTTONUP) {
         imshow("img", _src);
-        rect.width = rect.height = 0;
+        box.width = box.height = 0;
         drag = 0;
     }
 }
@@ -90,27 +117,27 @@ int main (int argc, char *argv[])
 
     destroyWindow("img");
 
-    if (c == 's' && rect.area() > 0) {
+    if (c == 's' && box.area() > 0) {
         /* output blurred image */
         imwrite("result.jpg", _dst);
 
         short x, y, w, h;
-        x = rect.x;
-        y = rect.y;
-        w = rect.width;
-        h = rect.height;
+        x = box.x;
+        y = box.y;
+        w = box.width;
+        h = box.height;
         // cout << x << " " << y << " " << w << " " << h << endl;
 
         /* init AES with key and set buffer */
         AES aes(key);
-        roi = _src(rect);
-        int size = ((3*roi.cols*roi.rows+15)>>4)<<4;
+        imgROI = _src(box);
+        int size = ((3*imgROI.cols*imgROI.rows+15)>>4)<<4;
         unsigned char *input = new unsigned char[size], *temp;
         memset(input, 0, size);
-        for (int i = 0; i < roi.rows; i++)
-            memcpy(input+i*3*roi.cols, roi.data+i*_dst.cols*3, 3*roi.cols);
+        for (int i = 0; i < imgROI.rows; i++)
+            memcpy(input+i*3*imgROI.cols, imgROI.data+i*_dst.cols*3, 3*imgROI.cols);
 
-        /* encrypt 128 bits each time until the whole roi is encryted */
+        /* encrypt 128 bits each time until the whole imgROI is encryted */
         for (int i = 0; i < size; i+=16) {
             temp = input+i;
             aes.Cipher(temp);

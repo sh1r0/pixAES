@@ -6,7 +6,7 @@
 using namespace std;
 using namespace cv;
 
-#define filename "Stickies.jpg"
+#define IMG "Stickies.jpg"
 #define window_name "after"
 #define kernel 51
 #define METHOD 2
@@ -24,6 +24,7 @@ Point point;
 int drag;
 vector<Point> points;
 const Point *pts;
+int npts;
 
 /* return i in [a, b] */
 int bound(short i,short a,short b)
@@ -50,23 +51,23 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     /* user drag the mouse */
     if (event == CV_EVENT_MOUSEMOVE && drag) {
         _dst = _src.clone();
-        
+
         #if METHOD == 1
         rectangle(_dst, point, Point(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
         #else
         pts = (const Point*)Mat(points).data;
-        int npts = points.size();
+        npts = points.size();
         points.push_back(Point(x, y));
         polylines(_dst, &pts, &npts, 1, false, Scalar(0,0,255), 2, 8, 0);
         #endif
-        
+
         imshow("img", _dst);
     }
 
     /* user release left button */
     if (event == CV_EVENT_LBUTTONUP && drag) {
         _dst = _src.clone();
-        
+
         #if METHOD == 1
         Point temp(point);
         point.x = min(x, temp.x);
@@ -86,7 +87,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
         medianBlur(_src(box), _dst(box), 51);
         _src(box).copyTo(_dst(box), mask(box));
         #endif
-        
+
         imshow("img", _dst);
         drag = 0;
     }
@@ -101,11 +102,12 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 
 int main (int argc, char *argv[])
 {
-    unsigned char *key;
     if (argc < 2)
-        _src = imread(filename, 1);
+        _src = imread(IMG, 1);
     else
         _src = imread(argv[1], 1);
+
+    unsigned char *key;
     if (argc < 3)
         key = KEY;
 

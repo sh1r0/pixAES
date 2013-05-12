@@ -6,23 +6,26 @@
 using namespace std;
 using namespace cv;
 
-#define filename "Stickies.jpg"
-
-unsigned char key[] = {
+unsigned char KEY[] = {
     0x2b, 0x7e, 0x15, 0x16,
     0x28, 0xae, 0xd2, 0xa6,
     0xab, 0xf7, 0x15, 0x88,
     0x09, 0xcf, 0x4f, 0x3c
 };
 
-int main()
+int main(int argc, char *argv[])
 {
-    AES aes(key);
-    FILE *f = fopen("result.jpg", "rb");
+    const char *IMG = (argc < 2) ? "result.jpg" : argv[1];
+    FILE *f = fopen(IMG, "rb");
     if (!f) {
-        perror("The encryted file dose not exist!!");
+        perror("Error");
         return -1;
     }
+
+    unsigned char *key;
+    if (argc < 3)
+        key = KEY;
+    AES aes(key);
 
     // get encrypted info
     unsigned char info[16] = "";
@@ -55,7 +58,7 @@ int main()
     }
 
     // recovery
-    Mat _src = imread("result.jpg", 1);
+    Mat _src = imread(IMG, 1);
     Mat dst = _src(Rect(x, y, w, h));
     for (int i = 0; i < dst.rows; i++)
         memcpy(dst.data+i*_src.cols*3, input+i*3*dst.cols, 3*dst.cols);

@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <opencv2/opencv.hpp>
-#define R 5
+#define R 10
 
 using namespace cv;
 
@@ -18,7 +18,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     y = bound(y, 0, img0.rows-1);
 
     /* user drag the mouse */
-    if (event == CV_EVENT_MOUSEMOVE) {
+    if (event == CV_EVENT_MOUSEMOVE || event == CV_EVENT_LBUTTONDOWN) {
         Rect box = Rect(max(0, x-R), max(0, y-R), min(R, x)+min(R, img0.cols-1-x)+1, min(R, y)+min(R, img0.rows-1-y)+1);
         Mat roi = img1(box);
         if (flags == CV_EVENT_FLAG_RBUTTON)

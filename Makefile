@@ -3,18 +3,22 @@
 CC=g++
 PROG=encrypt
 PROG2=decrypt
+PROG3=eraser
 CFLAGS=
 OPENCV_INC="C:\opencv\build\include" 
 OPENCV_LIB="C:\opencv\build\x86\mingw\lib" 
 OPENCV=-I $(OPENCV_INC) -L $(OPENCV_LIB) -lopencv_core245 -lopencv_highgui245 -lopencv_imgproc245
 IMG=
 
-all: $(PROG) $(PROG2)
+all: $(PROG) $(PROG2) $(PROG3)
 
 $(PROG): $(PROG).cpp AES.cpp
 	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
 
 $(PROG2): $(PROG2).cpp AES.cpp
+	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
+
+$(PROG3): $(PROG3).cpp
 	$(CC) $(CFLAGS) -o $@ $^ $(OPENCV)
 
 run: $(PROG) $(PROG2)

@@ -97,10 +97,11 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
-        _src = imread(IMG, 1);
-    else
-        _src = imread(argv[1], 1);
+    _src = (argc < 2) ? imread(IMG, 1) : imread(argv[1], 1);
+    if (!_src.data) {
+        perror("Error");
+        return -1;
+    }
 
     cout << "Please enter your password for encryption!!" << endl << "password: ";
     string pwd = getPassword();
@@ -124,7 +125,6 @@ int main(int argc, char *argv[])
         y = box.y;
         w = box.width;
         h = box.height;
-        // cout << x << " " << y << " " << w << " " << h << endl;
 
         /* init AES with key and set buffer */
         AES aes(key);

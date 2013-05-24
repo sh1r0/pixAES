@@ -2,6 +2,8 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "AES.h"
+#include "md5.h"
+#include "pwd.h"
 
 using namespace std;
 using namespace cv;
@@ -10,13 +12,6 @@ using namespace cv;
 #define window_name "after"
 #define kernel 51
 #define METHOD 2
-
-unsigned char KEY[] = {
-    0x2b, 0x7e, 0x15, 0x16,
-    0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88,
-    0x09, 0xcf, 0x4f, 0x3c
-};
 
 Mat _src, _dst, imgROI;
 Rect box;
@@ -100,16 +95,17 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     }
 }
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     if (argc < 2)
         _src = imread(IMG, 1);
     else
         _src = imread(argv[1], 1);
 
-    unsigned char *key;
-    if (argc < 3)
-        key = KEY;
+    cout << "Please enter your password for encryption!!" << endl << "password: ";
+    string pwd = getPassword();
+    MD5 md5(pwd);
+    unsigned char *key = md5.getDigest();
 
     namedWindow("img", 1);
 

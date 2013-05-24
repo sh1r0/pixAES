@@ -2,16 +2,11 @@
 #include <cstring>
 #include <opencv2/opencv.hpp>
 #include "AES.h"
+#include "md5.h"
+#include "pwd.h"
 
 using namespace std;
 using namespace cv;
-
-unsigned char KEY[] = {
-    0x2b, 0x7e, 0x15, 0x16,
-    0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88,
-    0x09, 0xcf, 0x4f, 0x3c
-};
 
 int main(int argc, char *argv[])
 {
@@ -22,9 +17,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    unsigned char *key;
-    if (argc < 3)
-        key = KEY;
+    cout << "Please enter your password for decryption!!" << endl << "password: ";
+    string pwd = getPassword();
+    MD5 md5(pwd);
+    unsigned char *key = md5.getDigest();
+
     AES aes(key);
 
     // get encrypted info
@@ -35,7 +32,7 @@ int main(int argc, char *argv[])
     // verify key and info
     aes.InvCipher(info);
     if (memcmp(info+8, "pixAES", 6)) {
-        fprintf(stderr, "The file is not encrypted or the key is wrong\n");
+        fprintf(stderr, "Incorrect password or there is no secret in the image\n");
         return -1;
     }
 
@@ -63,6 +60,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < dst.rows; i++)
         memcpy(dst.data+i*_src.cols*3, input+i*3*dst.cols, 3*dst.cols);
     imwrite("recover.jpg", _src);
+
+    cout << "Success!!" << endl;
 
     return 0;
 }

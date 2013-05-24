@@ -1,3 +1,6 @@
+#ifndef AES_H
+#define AES_H
+
 class AES {
 public:
 	AES(unsigned char* key);
@@ -24,3 +27,5 @@ private:
 	void InvShiftRows(unsigned char state[][4]);
 	void InvMixColumns(unsigned char state[][4]);
 };
+
+#endif

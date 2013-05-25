@@ -21,7 +21,7 @@ vector<Point> points;
 const Point *pts;
 int npts;
 
-/* return i in [a, b] */
+// return i in [a, b]
 int bound(short i,short a,short b)
 {
     return min(max(i,min(a,b)),max(a,b));
@@ -32,7 +32,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     x = bound(x, 0, _src.cols-1);
     y = bound(y, 0, _src.rows-1);
 
-    /* user press left button */
+    // user press left button
     if (event == CV_EVENT_LBUTTONDOWN && !drag) {
         #if METHOD == 1
         point = Point(x, y);
@@ -43,7 +43,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
         drag  = 1;
     }
 
-    /* user drag the mouse */
+    // user drag the mouse
     if (event == CV_EVENT_MOUSEMOVE && drag) {
         _dst = _src.clone();
 
@@ -59,7 +59,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
         imshow("img", _dst);
     }
 
-    /* user release left button */
+    // user release left button
     if (event == CV_EVENT_LBUTTONUP && drag) {
         _dst = _src.clone();
 
@@ -87,7 +87,7 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
         drag = 0;
     }
 
-    /* user click right button: reset all */
+    // user click right button: reset all
     if (event == CV_EVENT_RBUTTONUP) {
         imshow("img", _src);
         box.width = box.height = 0;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     destroyWindow("img");
 
     if (c == 's' && box.area() > 0) {
-        /* output blurred image */
+        // output blurred image
         imwrite("result.jpg", _dst);
 
         short x, y, w, h;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         w = box.width;
         h = box.height;
 
-        /* init AES with key and set buffer */
+        // init AES with key and set buffer
         AES aes(key);
         imgROI = _src(box);
         int size = ((3*imgROI.cols*imgROI.rows+15)>>4)<<4;
@@ -135,13 +135,13 @@ int main(int argc, char *argv[])
         for (int i = 0; i < imgROI.rows; i++)
             memcpy(input+i*3*imgROI.cols, imgROI.data+i*_dst.cols*3, 3*imgROI.cols);
 
-        /* encrypt 128 bits each time until the whole imgROI is encryted */
+        // encrypt 128 bits each time until the whole imgROI is encryted
         for (int i = 0; i < size; i+=16) {
             temp = input+i;
             aes.Cipher(temp);
         }
 
-        /* encrypt offset and size info */
+        // encrypt offset and size info
         unsigned char info[16] = "";
         memcpy(info, &x, sizeof(x));
         memcpy(info+2, &y, sizeof(y));
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         memcpy(info+8, "pixAES", 6);
         aes.Cipher(info);
 
-        /* append encrypted block of image and encryted info to blurred image */
+        // append encrypted block of image and encryted info to blurred image
         FILE *f = fopen("result.jpg", "ab");
         fwrite(input, 1, size, f);
         fwrite(info, 1, 16, f);

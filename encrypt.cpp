@@ -69,17 +69,24 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
         x = max(x, temp.x);
         point.y = min(y, temp.y);
         y = max(y, temp.y);
-        box = Rect(point.x, point.y, x - point.x, y - point.y);
-        imgROI = _dst(box);
-        medianBlur(imgROI, imgROI, kernel);
-        medianBlur(imgROI, imgROI, kernel);
+
+        Mat mask = Mat::zeros(_src.size(), CV_8UC1);
+        rectangle(mask, point, Point(x, y), CV_RGB(255, 255, 255), CV_FILLED, 8, 0);
+        inpaint(_dst, mask, _dst, 5, INPAINT_TELEA);
+
+        // box = Rect(point.x, point.y, x - point.x, y - point.y);
+        // imgROI = _dst(box);
+        // medianBlur(imgROI, imgROI, kernel);
+
         #else
         box = boundingRect(points);
-        Mat mask = Mat::ones(_src.size(), CV_8UC1);
         vector< vector<Point> > contour;
         contour.push_back(points);
-        fillPoly(mask, contour, Scalar(0));
-        medianBlur(_src(box), _dst(box), 51);
+        Mat mask = Mat::zeros(_src.size(), CV_8UC1);
+        fillPoly(mask, contour, Scalar(255));
+        inpaint(_dst, mask, _dst, 5, INPAINT_TELEA);
+        medianBlur(_dst(box), _dst(box), kernel);
+        bitwise_not(mask, mask);
         _src(box).copyTo(_dst(box), mask(box));
         #endif
 

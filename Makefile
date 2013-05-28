@@ -8,7 +8,7 @@ CFLAGS=
 DEPENDENCY=AES.cpp md5.cpp
 OPENCV_INC="C:\opencv\build\include" 
 OPENCV_LIB="C:\opencv\build\x86\mingw\lib" 
-OPENCV=-I $(OPENCV_INC) -L $(OPENCV_LIB) -lopencv_core245 -lopencv_highgui245 -lopencv_imgproc245
+OPENCV=-I $(OPENCV_INC) -L $(OPENCV_LIB) -lopencv_core245 -lopencv_highgui245 -lopencv_imgproc245 -lopencv_photo245
 IMG=
 
 all: $(PROG) $(PROG2) $(PROG3)
